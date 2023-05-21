@@ -1,104 +1,85 @@
 import { nanoid } from 'nanoid';
-import { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import ContactFrom from '../ContactForm/ContactForm';
 import ContactList from '../ContactList/ContactList';
 import Filter from '../Filter/Filter';
 import { Container, MainTitle, SubTitle, Message, Section } from './App.styled';
 
-class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+const initialValue = [
+  { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+  { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+  { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+  { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+];
 
-  componentDidMount() {
-    const contacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(contacts);
-    if (parsedContacts?.length) {
-      this.setState({ contacts: parsedContacts });
-      return;
-    }
-    this.setState({ contacts: this.state.contacts });
-  }
+const App = () => {
+  const localContacts = JSON.parse(localStorage.getItem('contacts'));
 
-  componentDidUpdate = (prevState, prevProps) => {
-    const nextContacts = this.state.contacts;
-    const prevContacts = prevState.contacts;
-    if (nextContacts !== prevContacts) {
-      localStorage.setItem('contacts', JSON.stringify(nextContacts));
-    }
-  };
+  const visibleContacts =
+    localContacts?.length > 0 ? localContacts : initialValue;
 
-  addContact = ({ name, number }) => {
-    const { contacts } = this.state;
-    if (
-      contacts.find(
-        contact =>
-          contact.name.toLocaleLowerCase() === name.toLocaleLowerCase() ||
-          contact.number === number
-      )
-    ) {
-      return alert(`${name} или ${number} есть в телефонной книге`);
-    }
+  const [contacts, setContacts] = useState(visibleContacts);
+  const [filter, setFilter] = useState('');
 
-    const newContact = {
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const addContact = ({ name, number }) => {
+    const contact = {
       id: nanoid(),
       name,
       number,
     };
 
-    this.setState(prevState => {
-      return { contacts: [...prevState.contacts, newContact] };
-    });
+    const checkName = contacts.some(
+      contact => contact.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (checkName) {
+      alert(`${name} is already in contacts`);
+      return;
+    }
+
+    setContacts([contact, ...contacts]);
   };
 
-  deleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
+  const deleteContact = contactId => {
+    setContacts(contacts.filter(contact => contact.id !== contactId));
   };
 
-  changeFilter = e => {
-    this.setState({ filter: e.currentTarget.value });
+  const changeFilter = e => {
+    setFilter(e.currentTarget.value);
   };
 
-  getVisibileContacts = () => {
-    const { contacts, filter } = this.state;
+  const getVisibileContacts = () => {
+    const normalizedFilter = filter.toLowerCase();
+
     return contacts.filter(contact =>
-      contact.name.toLocaleLowerCase().includes(filter.toLocaleLowerCase())
+      contact.name.toLowerCase().includes(normalizedFilter)
     );
   };
 
-  render() {
-    const { filter, contacts } = this.state;
-    return (
-      <>
-        <Container>
-          <MainTitle>Phonebook</MainTitle>
-          <ContactFrom onSubmit={this.addContact} />
-          <Section>
-            <SubTitle>Contacts</SubTitle>
-            {contacts.length > 0 ? (
-              <>
-                <Filter value={filter} changeFilter={this.changeFilter} />
-                <ContactList
-                  contactsList={this.getVisibileContacts()}
-                  deleteContact={this.deleteContact}
-                />
-              </>
-            ) : (
-              <Message>No contacts</Message>
-            )}
-          </Section>
-        </Container>
-      </>
-    );
-  }
-}
+  return (
+    <Container>
+      <MainTitle>Phonebook</MainTitle>
+      <ContactFrom onSubmit={addContact} />
+      <Section>
+        <SubTitle>Contacts</SubTitle>
+        {contacts.length > 0 ? (
+          <>
+            <Filter value={filter} changeFilter={changeFilter} />
+            <ContactList
+              contactsList={getVisibileContacts()}
+              deleteContact={deleteContact}
+            />
+          </>
+        ) : (
+          <Message>No contacts</Message>
+        )}
+      </Section>
+    </Container>
+  );
+};
 
 export default App;

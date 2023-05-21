@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { List, Item, Field, DeleteBtn } from './ContactList.styled';
 
@@ -22,7 +23,7 @@ export default ContactList;
 
 ContactList.propTypes = {
   contactsList: PropTypes.arrayOf(
-    PropTypes.shape({
+    PropTypes.exact({
       id: PropTypes.string.isRequired,
       number: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
